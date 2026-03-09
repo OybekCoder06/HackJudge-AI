@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HackJudge AI — Loyiha Baholovchi</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080b10;
+    --surface: #0d1117;
+    --surface2: #131920;
+    --border: #1e2d3d;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --accent3: #7c3aed;
+    --green: #00ff88;
+    --red: #ff4757;
+    --yellow: #ffd60a;
+    --text: #e8edf3;
+    --muted: #4a6580;
+    --glow: 0 0 30px rgba(0, 212, 255, 0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at 30% 20%, rgba(0, 212, 255, 0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 80%, rgba(124, 58, 237, 0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+    animation: bgPulse 8s ease-in-out infinite alternate;
+  }
+
+  @keyframes bgPulse {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(2%, 1%); }
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    padding: 32px 0 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 48px;
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+  }
+
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 24px;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-text span { color: var(--accent); }
+
+  .logo-sub {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .settings-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    transition: all 0.2s;
+  }
+
+  .settings-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: var(--glow);
+  }
+
+  /* API Settings Panel */
+  .api-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 32px;
+    display: none;
+    animation: slideDown 0.3s ease;
+  }
+
+  .api-panel.open { display: block; }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .panel-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-title::before {
+    content: '';
+    width: 3px;
+    height: 18px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-group.full { grid-column: 1 / -1; }
+
+  label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+  }
+
+  input, select, textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.08);
+  }
+
+  select option { background: var(--surface); }
+
+  .save-btn {
+    margin-top: 16px;
+    background: linear-gradient(135deg, var(--accent), #0099cc);
+    border: none;
+    color: #000;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .save-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+  /* Upload Zone */
+  .upload-section {
+    margin-bottom: 40px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .step-badge {
+    width: 28px;
+    height: 28px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+  }
+
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    padding: 60px 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: var(--surface);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .drop-zone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(0, 212, 255, 0.03) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    box-shadow: var(--glow);
+  }
+
+  .drop-zone:hover::before, .drop-zone.drag-over::before { opacity: 1; }
+
+  .drop-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    display: block;
+    filter: grayscale(0.5);
+  }
+
+  .drop-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+
+  .drop-sub {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+
+  .browse-btn {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .browse-btn:hover {
+    background: rgba(0, 212, 255, 0.1);
+    box-shadow: var(--glow);
+  }
+
+  #fileInput { display: none; }
+
+  /* File List */
+  .file-list {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .file-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .file-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--surface), var(--border));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .file-info { flex: 1; min-width: 0; }
+
+  .file-name {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .file-size {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .file-remove {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+
+  .file-remove:hover { color: var(--red); }
+
+  /* Project Info */
+  .info-section {
+    margin-bottom: 40px;
+  }
+
+  .criteria-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .criteria-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .criteria-chip input[type="checkbox"] { display: none; }
+
+  .criteria-chip.selected {
+    border-color: var(--accent);
+    background: rgba(0, 212, 255, 0.07);
+    color: var(--accent);
+  }
+
+  .criteria-chip-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 1.5px solid var(--muted);
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .criteria-chip.selected .criteria-chip-dot {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+  }
+
+  .criteria-label { font-size: 13px; }
+
+  /* Analyze Button */
+  .analyze-section {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .analyze-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    border: none;
+    color: #fff;
+    padding: 16px 48px;
+    border-radius: 12px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.3s;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .analyze-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.15) 100%);
+  }
+
+  .analyze-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 212, 255, 0.3);
+  }
+
+  .analyze-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Loading */
+  .loading-state {
+    display: none;
+    text-align: center;
+    padding: 60px 20px;
+  }
+
+  .loading-state.show { display: block; }
+
+  .loading-ring {
+    width: 64px;
+    height: 64px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 24px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .loading-dots::after {
+    content: '';
+    animation: dots 1.5s infinite;
+  }
+
+  @keyframes dots {
+    0%, 20% { content: ''; }
+    40% { content: '.'; }
+    60% { content: '..'; }
+    80%, 100% { content: '...'; }
+  }
+
+  /* Results */
+  .results-section { display: none; }
+  .results-section.show { display: block; }
+
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .verdict-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    border-radius: 100px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .verdict-excellent { background: rgba(0, 255, 136, 0.12); color: var(--green); border: 1px solid rgba(0, 255, 136, 0.3); }
+  .verdict-good { background: rgba(0, 212, 255, 0.12); color: var(--accent); border: 1px solid rgba(0, 212, 255, 0.3); }
+  .verdict-average { background: rgba(255, 214, 10, 0.12); color: var(--yellow); border: 1px solid rgba(255, 214, 10, 0.3); }
+  .verdict-poor { background: rgba(255, 71, 87, 0.12); color: var(--red); border: 1px solid rgba(255, 71, 87, 0.3); }
+
+  .score-display {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  .score-number {
+    font-family: 'Space Mono', monospace;
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .score-max {
+    font-family: 'Space Mono', monospace;
+    font-size: 20px;
+    color: var(--muted);
+  }
+
+  /* Score Cards */
+  .score-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .score-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .score-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: var(--card-color, var(--accent));
+    width: var(--card-pct, 0%);
+    transition: width 1s ease 0.3s;
+  }
+
+  .card-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 10px;
+  }
+
+  .card-score {
+    font-family: 'Space Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--card-color, var(--accent));
+  }
+
+  .card-score span {
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  /* Analysis Content */
+  .analysis-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 700px) { .analysis-grid { grid-template-columns: 1fr; } }
+
+  .analysis-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+  }
+
+  .analysis-card.full { grid-column: 1 / -1; }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .icon-green { background: rgba(0, 255, 136, 0.12); }
+  .icon-red { background: rgba(255, 71, 87, 0.12); }
+  .icon-yellow { background: rgba(255, 214, 10, 0.12); }
+  .icon-blue { background: rgba(0, 212, 255, 0.12); }
+  .icon-purple { background: rgba(124, 58, 237, 0.12); }
+
+  .analysis-content {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #b0bec5;
+  }
+
+  .analysis-content ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .analysis-content li {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .analysis-content li::before {
+    content: '→';
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .analysis-content.pros li::before { color: var(--green); content: '+'; font-weight: 700; }
+  .analysis-content.cons li::before { color: var(--red); content: '−'; font-weight: 700; }
+
+  /* Conclusion */
+  .conclusion-box {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.05), rgba(124, 58, 237, 0.05));
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .conclusion-box::before {
+    content: '"';
+    position: absolute;
+    top: -10px;
+    left: 16px;
+    font-size: 120px;
+    font-family: 'Syne', serif;
+    color: rgba(0, 212, 255, 0.08);
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .conclusion-text {
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text);
+    position: relative;
+  }
+
+  .reset-btn {
+    display: block;
+    margin: 0 auto;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 12px 32px;
+    border-radius: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .reset-btn:hover {
+    border-color: var(--muted);
+    color: var(--text);
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 14px 20px;
+    border-radius: 10px;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    z-index: 100;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+  }
+
+  .toast.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 40px 0;
+  }
+
+  .hint {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">⚡</div>
+        <div>
+          <div class="logo-text">Hack<span>Judge</span> AI</div>
+          <div class="logo-sub">Hackathon Baholovchi Tizim</div>
+        </div>
+      </div>
+      <button class="settings-btn" onclick="toggleSettings()">
+        ⚙ API Sozlamalari
+      </button>
+    </div>
+  </header>
+
+  <!-- API Settings Panel -->
+  <div class="api-panel" id="apiPanel">
+    <div class="panel-title">AI API Sozlamalari</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>AI Provayder</label>
+        <select id="aiProvider" onchange="updateProviderDefaults()">
+          <option value="anthropic">Anthropic (Claude)</option>
+          <option value="openai">OpenAI (GPT)</option>
+          <option value="custom">Boshqa (Custom)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Model nomi</label>
+        <input type="text" id="modelName" value="claude-sonnet-4-20250514" placeholder="masalan: claude-sonnet-4-20250514">
+      </div>
+      <div class="form-group full">
+        <label>API Endpoint URL</label>
+        <input type="text" id="apiEndpoint" value="https://api.anthropic.com/v1/messages" placeholder="https://...">
+      </div>
+      <div class="form-group full">
+        <label>API Kalit (ixtiyoriy — brauzerda saqlanadi)</label>
+        <input type="password" id="apiKey" placeholder="sk-ant-... yoki sk-...">
+        <div class="hint">⚠ API kalitsiz ham ishlaydi (brauzer proxy orqali)</div>
+      </div>
+      <div class="form-group full">
+        <label>Tizim Prompt (o'zgartirish mumkin)</label>
+        <textarea id="systemPrompt" rows="4" style="resize:vertical;">Siz professional hackathon hakamisiz. Loyihalarni quyidagi mezonlar bo'yicha baholaysiz: innovatsiya, texnik sifat, muammoni hal etish, amaliy foyda, va taqdimot sifati. Javobingizni faqat JSON formatida bering. Hech qanday markdown, kod blok yoki qo'shimcha matn qo'shmang.</textarea>
+      </div>
+    </div>
+    <button class="save-btn" onclick="saveSettings()">✓ Saqlash</button>
+  </div>
+
+  <!-- Upload Section -->
+  <div class="upload-section">
+    <div class="section-header">
+      <div class="step-badge">1</div>
+      <div class="section-title">Loyiha Fayllarini Yuklang</div>
+    </div>
+
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"
+         ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+      <span class="drop-icon">📁</span>
+      <div class="drop-title">Fayllarni shu yerga tashlang</div>
+      <div class="drop-sub">yoki brauzer orqali tanlang — barcha fayl turlari qabul qilinadi</div>
+      <button class="browse-btn" onclick="event.stopPropagation(); document.getElementById('fileInput').click()">
+        Fayl tanlash
+      </button>
+      <input type="file" id="fileInput" multiple onchange="handleFiles(event)">
+    </div>
+    <div class="file-list" id="fileList"></div>
+  </div>
+
+  <!-- Project Info -->
+  <div class="info-section">
+    <div class="section-header">
+      <div class="step-badge">2</div>
+      <div class="section-title">Loyiha Ma'lumotlari</div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Loyiha nomi</label>
+        <input type="text" id="projectName" placeholder="masalan: EcoTrack App">
+      </div>
+      <div class="form-group">
+        <label>Jamoa nomi</label>
+        <input type="text" id="teamName" placeholder="masalan: CodeWarriors">
+      </div>
+      <div class="form-group full">
+        <label>Loyiha haqida qisqacha (ixtiyoriy)</label>
+        <textarea id="projectDesc" rows="3" placeholder="Loyihangizni qisqacha tushuntiring..."></textarea>
+      </div>
+    </div>
+
+    <div style="margin-top: 20px;">
+      <label>Baholash mezonlari</label>
+      <div class="criteria-grid" id="criteriaGrid">
+        <label class="criteria-chip selected" data-val="innovation">
+          <input type="checkbox" checked>
+          <span class="criteria-chip-dot"></span>
+          <span class="criteria-label">💡 Innovatsiya</span>
+        </label>
+        <label class="criteria-chip selected" data-val="technical">
+          <input type="checkbox" checked>
+          <span class="criteria-chip-dot"></span>
+          <span class="criteria-label">⚙️ Texnik sifat</span>
+        </label>
+        <label class="criteria-chip selected" data-val="problem">
+          <input type="checkbox" checked>
+          <span class="criteria-chip-dot"></span>
+          <span class="criteria-label">🎯 Muammo hal etish</span>
+        </label>
+        <label class="criteria-chip selected" data-val="practical">
+          <input type="checkbox" checked>
+          <span class="criteria-chip-dot"></span>
+          <span class="criteria-label">🚀 Amaliy foyda</span>
+        </label>
+        <label class="criteria-chip selected" data-val="design">
+          <input type="checkbox" checked>
+          <span class="criteria-chip-dot"></span>
+          <span class="criteria-label">🎨 Dizayn / UX</span>
+        </label>
+        <label class="criteria-chip selected" data-val="presentation">
+          <input type="checkbox" checked>
+          <span class="criteria-chip-dot"></span>
+          <span class="criteria-label">📊 Taqdimot</span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analyze Button -->
+  <div class="analyze-section">
+    <button class="analyze-btn" id="analyzeBtn" onclick="analyzeProject()">
+      🤖 AI Bilan Baholash
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" id="loadingState">
+    <div class="loading-ring"></div>
+    <div class="loading-text">AI loyihani tahlil qilmoqda<span class="loading-dots"></span></div>
+    <div style="font-size: 12px; color: var(--muted); margin-top: 8px; font-family: monospace;">
+      Barcha fayllar o'qilmoqda va tahlil qilinmoqda
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results-section" id="resultsSection">
+    <div class="divider"></div>
+    <div class="results-header">
+      <div>
+        <div class="section-title" style="font-family: 'Syne', sans-serif; font-size: 22px;">Baholash Natijasi</div>
+        <div id="projectNameDisplay" style="color: var(--muted); font-family: 'Space Mono', monospace; font-size: 12px; margin-top: 4px;"></div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+        <div id="verdictBadge" class="verdict-badge"></div>
+        <div class="score-display">
+          <div class="score-number" id="totalScore">0</div>
+          <div class="score-max">/100</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="score-cards" id="scoreCards"></div>
+
+    <div class="analysis-grid" id="analysisGrid"></div>
+
+    <div class="conclusion-box" id="conclusionBox">
+      <div class="conclusion-text" id="conclusionText"></div>
+    </div>
+
+    <button class="reset-btn" onclick="resetAll()">↺ Yangi loyiha baholash</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let uploadedFiles = [];
+  let settings = {
+    provider: 'anthropic',
+    model: 'claude-sonnet-4-20250514',
+    endpoint: 'https://api.anthropic.com/v1/messages',
+    apiKey: '',
+    systemPrompt: document.getElementById('systemPrompt').value
+  };
+
+  // Criteria chips toggle
+  document.querySelectorAll('.criteria-chip').forEach(chip => {
+    chip.addEventListener('click', function() {
+      this.classList.toggle('selected');
+      this.querySelector('input').checked = this.classList.contains('selected');
+    });
+  });
+
+  function toggleSettings() {
+    document.getElementById('apiPanel').classList.toggle('open');
+  }
+
+  function updateProviderDefaults() {
+    const p = document.getElementById('aiProvider').value;
+    if (p === 'anthropic') {
+      document.getElementById('modelName').value = 'claude-sonnet-4-20250514';
+      document.getElementById('apiEndpoint').value = 'https://api.anthropic.com/v1/messages';
+    } else if (p === 'openai') {
+      document.getElementById('modelName').value = 'gpt-4o';
+      document.getElementById('apiEndpoint').value = 'https://api.openai.com/v1/chat/completions';
+    }
+  }
+
+  function saveSettings() {
+    settings.provider = document.getElementById('aiProvider').value;
+    settings.model = document.getElementById('modelName').value;
+    settings.endpoint = document.getElementById('apiEndpoint').value;
+    settings.apiKey = document.getElementById('apiKey').value;
+    settings.systemPrompt = document.getElementById('systemPrompt').value;
+    showToast('Sozlamalar saqlandi ✓', 'success');
+    document.getElementById('apiPanel').classList.remove('open');
+  }
+
+  // Drag and drop
+  function handleDragOver(e) {
+    e.preventDefault();
+    document.getElementById('dropZone').classList.add('drag-over');
+  }
+
+  function handleDragLeave(e) {
+    document.getElementById('dropZone').classList.remove('drag-over');
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('dropZone').classList.remove('drag-over');
+    const files = Array.from(e.dataTransfer.files);
+    addFiles(files);
+  }
+
+  function handleFiles(e) {
+    addFiles(Array.from(e.target.files));
+  }
+
+  function addFiles(files) {
+    files.forEach(f => {
+      if (!uploadedFiles.find(x => x.name === f.name && x.size === f.size)) {
+        uploadedFiles.push(f);
+      }
+    });
+    renderFileList();
+  }
+
+  function removeFile(idx) {
+    uploadedFiles.splice(idx, 1);
+    renderFileList();
+  }
+
+  function getFileIcon(name) {
+    const ext = name.split('.').pop().toLowerCase();
+    const map = {
+      js: '📜', ts: '📜', jsx: '📜', tsx: '📜',
+      py: '🐍', java: '☕', cpp: '⚡', c: '⚡',
+      html: '🌐', css: '🎨', scss: '🎨',
+      json: '📋', xml: '📋', yaml: '📋', yml: '📋',
+      md: '📝', txt: '📄', pdf: '📕',
+      png: '🖼', jpg: '🖼', gif: '🖼', svg: '🖼',
+      zip: '📦', tar: '📦', gz: '📦',
+      mp4: '🎬', mp3: '🎵',
+      sh: '💻', bat: '💻',
+    };
+    return map[ext] || '📄';
+  }
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  function renderFileList() {
+    const list = document.getElementById('fileList');
+    list.innerHTML = uploadedFiles.map((f, i) => `
+      <div class="file-item">
+        <div class="file-icon">${getFileIcon(f.name)}</div>
+        <div class="file-info">
+          <div class="file-name">${f.name}</div>
+          <div class="file-size">${formatSize(f.size)}</div>
+        </div>
+        <button class="file-remove" onclick="removeFile(${i})">×</button>
+      </div>
+    `).join('');
+  }
+
+  async function readFileContent(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      const ext = file.name.split('.').pop().toLowerCase();
+      const textExts = ['js','ts','jsx','tsx','py','java','cpp','c','h','cs','go','rs','rb','php',
+        'html','css','scss','sass','json','xml','yaml','yml','md','txt','sh','bat','env','toml','ini','conf'];
+
+      if (textExts.includes(ext) && file.size < 200000) {
+        reader.onload = e => resolve({ name: file.name, content: e.target.result, type: 'text' });
+        reader.readAsText(file);
+      } else {
+        resolve({ name: file.name, content: `[${formatSize(file.size)} - ikkilik/katta fayl]`, type: 'binary' });
+      }
+    });
+  }
+
+  async function analyzeProject() {
+    if (uploadedFiles.length === 0) {
+      showToast('Kamida bitta fayl yuklang!', 'error'); return;
+    }
+
+    const projectName = document.getElementById('projectName').value || 'Nomsiz loyiha';
+    const teamName = document.getElementById('teamName').value || 'Noma\'lum jamoa';
+    const projectDesc = document.getElementById('projectDesc').value;
+    const selectedCriteria = Array.from(document.querySelectorAll('.criteria-chip.selected'))
+      .map(c => c.dataset.val);
+
+    if (selectedCriteria.length === 0) {
+      showToast('Kamida bitta mezon tanlang!', 'error'); return;
+    }
+
+    document.getElementById('analyzeBtn').disabled = true;
+    document.getElementById('loadingState').classList.add('show');
+    document.getElementById('resultsSection').classList.remove('show');
+
+    // Read files
+    const fileContents = await Promise.all(uploadedFiles.map(readFileContent));
+
+    const filesSummary = fileContents.map(f =>
+      `=== ${f.name} ===\n${f.content.substring(0, 3000)}${f.content.length > 3000 ? '\n...[qisqartirildi]' : ''}`
+    ).join('\n\n');
+
+    const criteriaMap = {
+      innovation: 'Innovatsiya va yangilik (0-20 ball)',
+      technical: 'Texnik sifat va kod tuzilishi (0-20 ball)',
+      problem: 'Muammoni aniqlash va hal etish (0-20 ball)',
+      practical: 'Amaliy foyda va bozor imkoniyati (0-20 ball)',
+      design: 'Dizayn va foydalanuvchi tajribasi (0-10 ball)',
+      presentation: 'Taqdimot va hujjatlashtirish (0-10 ball)'
+    };
+
+    const activeCriteria = selectedCriteria.map(c => criteriaMap[c] || c).join('\n- ');
+
+    const userPrompt = `Quyidagi hackathon loyihasini professional hakam sifatida baholang.
+
+LOYIHA MA'LUMOTLARI:
+- Nomi: ${projectName}
+- Jamoa: ${teamName}
+- Tavsif: ${projectDesc || 'Ko\'rsatilmagan'}
+
+BAHOLASH MEZONLARI:
+- ${activeCriteria}
+
+LOYIHA FAYLLARI:
+${filesSummary}
+
+Quyidagi JSON formatida javob bering (faqat JSON, hech qanday qo'shimcha matn yo'q):
+{
+  "scores": {
+    "innovation": <0-20>,
+    "technical": <0-20>,
+    "problem": <0-20>,
+    "practical": <0-20>,
+    "design": <0-10>,
+    "presentation": <0-10>
+  },
+  "total": <0-100>,
+  "verdict": "<excellent|good|average|poor>",
+  "strengths": ["<kuchli tomon 1>", "<kuchli tomon 2>", "<kuchli tomon 3>"],
+  "weaknesses": ["<zaif tomon 1>", "<zaif tomon 2>", "<zaif tomon 3>"],
+  "risks": ["<xavf 1>", "<xavf 2>"],
+  "suggestions": ["<tavsiya 1>", "<tavsiya 2>", "<tavsiya 3>"],
+  "market_relevance": "<bozor dolzarbligi haqida 2-3 gap>",
+  "conclusion": "<umumiy xulosa, 3-5 gap. Professional hakam ovozida>"
+}`;
+
+    try {
+      let result;
+
+      if (settings.provider === 'anthropic' || settings.endpoint.includes('anthropic')) {
+        result = await callAnthropicAPI(userPrompt);
+      } else if (settings.provider === 'openai' || settings.endpoint.includes('openai')) {
+        result = await callOpenAIAPI(userPrompt);
+      } else {
+        result = await callAnthropicAPI(userPrompt);
+      }
+
+      displayResults(result, projectName, teamName);
+    } catch (err) {
+      console.error(err);
+      showToast('Xatolik: ' + err.message, 'error');
+    } finally {
+      document.getElementById('analyzeBtn').disabled = false;
+      document.getElementById('loadingState').classList.remove('show');
+    }
+  }
+
+  async function callAnthropicAPI(userPrompt) {
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    if (settings.apiKey) {
+      headers['x-api-key'] = settings.apiKey;
+      headers['anthropic-version'] = '2023-06-01';
+    }
+
+    const body = {
+      model: settings.model || 'claude-sonnet-4-20250514',
+      max_tokens: 1500,
+      system: settings.systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }]
+    };
+
+    const res = await fetch(settings.endpoint || 'https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const text = data.content.map(b => b.text || '').join('');
+    return parseJSON(text);
+  }
+
+  async function callOpenAIAPI(userPrompt) {
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    if (settings.apiKey) {
+      headers['Authorization'] = 'Bearer ' + settings.apiKey;
+    }
+
+    const body = {
+      model: settings.model || 'gpt-4o',
+      max_tokens: 1500,
+      messages: [
+        { role: 'system', content: settings.systemPrompt },
+        { role: 'user', content: userPrompt }
+      ]
+    };
+
+    const res = await fetch(settings.endpoint || 'https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const text = data.choices[0].message.content;
+    return parseJSON(text);
+  }
+
+  function parseJSON(text) {
+    const clean = text.replace(/```json|```/g, '').trim();
+    try {
+      return JSON.parse(clean);
+    } catch {
+      const match = clean.match(/\{[\s\S]*\}/);
+      if (match) return JSON.parse(match[0]);
+      throw new Error('AI javobi JSON formatida emas');
+    }
+  }
+
+  function displayResults(data, projectName, teamName) {
+    document.getElementById('projectNameDisplay').textContent =
+      `${projectName} · ${teamName}`;
+
+    const total = data.total || 0;
+    document.getElementById('totalScore').textContent = total;
+
+    // Verdict
+    const verdictMap = {
+      excellent: { text: '🏆 A\'lo', cls: 'verdict-excellent' },
+      good: { text: '✅ Yaxshi', cls: 'verdict-good' },
+      average: { text: '⚠️ O\'rtacha', cls: 'verdict-average' },
+      poor: { text: '❌ Zaif', cls: 'verdict-poor' }
+    };
+    const v = verdictMap[data.verdict] || verdictMap.average;
+    const vBadge = document.getElementById('verdictBadge');
+    vBadge.textContent = v.text;
+    vBadge.className = 'verdict-badge ' + v.cls;
+
+    // Score Cards
+    const scores = data.scores || {};
+    const scoreConfig = [
+      { key: 'innovation', label: 'Innovatsiya', max: 20, color: '#00d4ff' },
+      { key: 'technical', label: 'Texnik', max: 20, color: '#7c3aed' },
+      { key: 'problem', label: 'Muammo', max: 20, color: '#ff6b35' },
+      { key: 'practical', label: 'Amaliy', max: 20, color: '#00ff88' },
+      { key: 'design', label: 'Dizayn', max: 10, color: '#ffd60a' },
+      { key: 'presentation', label: 'Taqdimot', max: 10, color: '#ff4757' },
+    ];
+
+    document.getElementById('scoreCards').innerHTML = scoreConfig.map(sc => {
+      const val = scores[sc.key] ?? 0;
+      const pct = (val / sc.max * 100).toFixed(0);
+      return `
+        <div class="score-card" style="--card-color: ${sc.color}; --card-pct: 0%;" data-pct="${pct}">
+          <div class="card-label">${sc.label}</div>
+          <div class="card-score">${val}<span>/${sc.max}</span></div>
+        </div>
+      `;
+    }).join('');
+
+    // Animate score bars
+    setTimeout(() => {
+      document.querySelectorAll('.score-card').forEach(card => {
+        card.style.setProperty('--card-pct', card.dataset.pct + '%');
+      });
+    }, 100);
+
+    // Analysis grid
+    const grid = document.getElementById('analysisGrid');
+    const listHTML = (items) => items && items.length
+      ? '<ul>' + items.map(i => `<li>${i}</li>`).join('') + '</ul>'
+      : '<p>Ma\'lumot yo\'q</p>';
+
+    grid.innerHTML = `
+      <div class="analysis-card">
+        <div class="card-title">
+          <div class="card-title-icon icon-green">💪</div>
+          Kuchli tomonlar
+        </div>
+        <div class="analysis-content pros">${listHTML(data.strengths)}</div>
+      </div>
+      <div class="analysis-card">
+        <div class="card-title">
+          <div class="card-title-icon icon-red">⚠️</div>
+          Zaif tomonlar
+        </div>
+        <div class="analysis-content cons">${listHTML(data.weaknesses)}</div>
+      </div>
+      <div class="analysis-card">
+        <div class="card-title">
+          <div class="card-title-icon icon-yellow">🚨</div>
+          Xavf va muammolar
+        </div>
+        <div class="analysis-content">${listHTML(data.risks)}</div>
+      </div>
+      <div class="analysis-card">
+        <div class="card-title">
+          <div class="card-title-icon icon-blue">🎯</div>
+          Tavsiyalar
+        </div>
+        <div class="analysis-content">${listHTML(data.suggestions)}</div>
+      </div>
+      ${data.market_relevance ? `
+      <div class="analysis-card full">
+        <div class="card-title">
+          <div class="card-title-icon icon-purple">📈</div>
+          Bozor Dolzarbligi
+        </div>
+        <div class="analysis-content"><p>${data.market_relevance}</p></div>
+      </div>` : ''}
+    `;
+
+    // Conclusion
+    document.getElementById('conclusionText').textContent = data.conclusion || 'Xulosa mavjud emas.';
+
+    document.getElementById('resultsSection').classList.add('show');
+    document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function resetAll() {
+    uploadedFiles = [];
+    renderFileList();
+    document.getElementById('projectName').value = '';
+    document.getElementById('teamName').value = '';
+    document.getElementById('projectDesc').value = '';
+    document.getElementById('resultsSection').classList.remove('show');
+    document.getElementById('fileInput').value = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function showToast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + type;
+    setTimeout(() => t.className = 'toast', 3000);
+  }
+</script>
+</body>
+</html>
